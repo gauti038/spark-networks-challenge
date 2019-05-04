@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import time
+import json
 import argparse 
 import schedule
 import logging
@@ -9,15 +10,27 @@ import logging.handlers as handlers
 from utilities import requirementCheck
 from utilities import functions
 
+# block scheduler logs from going into the log files
 logging.getLogger('schedule').propagate = False
+
+# read the config file 
+with open('config.json') as config_file:
+    config = json.load(config_file)
+
+# log configuration - can be moved to a config file
+level = logging.getLevelName(config["logConfig"]["level"])
 logging.basicConfig(
-    filename="logs/app.log",
-    level=logging.DEBUG,
-    format="%(asctime)s:%(levelname)s:%(message)s"
+    filename=str(config["logConfig"]["filename"]),
+    level=level,
+    format=str(config["logConfig"]["format"])
 )
 
 logger = logging.getLogger(__name__)
 
+# global counter variable to keep track of restarts
+COUNTER = 0 
+
+# check if the host OS supports the code
 requirementCheck.check_os_version(logger)
 
 if __name__ == "__main__":
@@ -51,9 +64,9 @@ if __name__ == "__main__":
     health_check_interval = ARGUMENTS.health_check_interval
     start_command = ARGUMENTS.start_command
 
+# if params are missing in argument, ask at runtime
 if restart_wait_interval is None:
     restart_wait_interval = input("Seconds to wait between attempts to restart service: ")
-
 
 if max_fail_count is None:
     max_fail_count = input("Number of attempts before giving up: ")
@@ -67,6 +80,7 @@ if health_check_interval is None:
 if start_command is None:
     start_command = input("command to re-start the process: ")
 
+# parameter validation
 if not restart_wait_interval.isdigit() or int(restart_wait_interval) < 0:
     print("restart_wait_interval must be a positive integer")
     logger.error("restart_wait_interval must be a positive integer")
@@ -82,7 +96,7 @@ if not health_check_interval.isdigit() or int(health_check_interval) < 0:
     logger.error("health_check_interval must be a positive integer")
     exit()
 
-COUNTER = 0
+# put all params in logfile
 logger.info("######## New Process ######## \n \
     \tMonitoring params are: \n \
     \trestart_wait_interval = %s, \n \
@@ -92,29 +106,30 @@ logger.info("######## New Process ######## \n \
     \tstart_command = %s \n ",
     restart_wait_interval, max_fail_count, process_name, health_check_interval, start_command )
 
-def job():
+# define the job 
+def health_check():
     global COUNTER
+
+    # find the pid of the process
     pids = functions.findProcessID(process_name, logger)
 
     if pids is '':
+        # implies process is not running - start it using start command
         logger.info("the process in down.. restarting")
         functions.restart_process(start_command, logger)
+        # incerement counter to track number of restarts
         COUNTER = COUNTER + 1
         if COUNTER >= int(max_fail_count):
             logger.error("max number of retires reached.. program unable to start.. shutting down")
             exit()
+        # sleep for wait interval to give some time for start command to work
         time.sleep(int(restart_wait_interval))
     else:
         logger.debug("%s is running with pid: %s", process_name, pids)
         COUNTER = 0
-    logger.info("#### Iteration complete ####")
 
-schedule.every(int(health_check_interval)).seconds.do(job)
+schedule.every(int(health_check_interval)).seconds.do(health_check)
 
 while 1:
     schedule.run_pending()
     time.sleep(1)
-
-
-
-# python monitor.py --restart_wait_interval 5 --max_fail_count 3 --process_name docker --health_check_interval 1 --start_command "service docker start"
