@@ -7,7 +7,7 @@ from utilities import requirementCheck
 
 logging.getLogger('schedule').propagate = False
 logging.basicConfig(
-    filename="test.log",
+    filename="logs/test.log",
     level=logging.DEBUG,
     format="%(asctime)s:%(levelname)s:%(message)s"
 )

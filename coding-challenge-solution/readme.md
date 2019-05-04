@@ -1,20 +1,3 @@
-CODING CHALLENGE:
-The idea is to create a “daemon supervisor”. This tool should check that the process is
-running and at all times and starts it in case is down. It should take as parameters:
- Seconds to wait between attempts to restart service
- Number of attempts before giving up
- Name of the process to supervise
- Check interval in seconds
- Generate logs in case of events.
-
-
-
-Coding challenge:
-Here we want to see your coding/scripting skills. We want to see how you structure the code,
-documentation. You can choose the language you want
-
-
-
 # Coding Challenge - daemon supervisor #
 
 ## Assumptions ##
@@ -41,7 +24,12 @@ documentation. You can choose the language you want
 2. After the code has all the params, it checks if the time parameters are indeed positive numbers. Else it throws an error.
 3. I have used a python scheduler module to schedule health checks at every time interval
 4. When the code starts, it checks if the OS supports the code. (Linux in this case). Else throws an error and shuts down.
-5. Unit tests are written for each of the functions.
-6. 
+5. Using pgrep command of ubuntu, I check for the pid of the process. If it returns a value, the process is still running, else it is down. 
+6. If the process is down, the start command is run. (Please ensure the user who calls this script has access to run start command). There is also a counter that keeps track of the number of times this start command is called
+7. If the process is not running after max_fail_count number of retries, the program logs the detail and stops execution. 
+8. The logs are written in logs folder using a specific format with loglevel and timestamp
+9. Unit tests are written for each of the functions in tests.py file
+
+
 
 
