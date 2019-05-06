@@ -25,10 +25,12 @@ case study
 3. I would use Kuberentes as orchestrator for docker containers. Instead of going with EKS, I would install Kubernetes on the servers using kops. (control over master node, control plane and reduced costs). This step must be automated using ansible script.
 4. The Ansible script also install monitoring service - metrics-server, prometheus and grafana for visual representation. I would also add weavescope to see interations between various pods and realtime architecture diagram of the application.
 5. These steps must have the enironment up and running without any intervention. All the services can be exposed using ingress or publicIP and mapped to develop.myapp.example.com to interact with external world.
+![Kuberentes deployments](images/Kubernetes.jpg?raw=true "Title")
 6. Now that the dev environemnt is setup and automated, start with application code.
 7. We will follow frying workflow for images. So we have to move every confiuration or password to configmap, environemnt variables, or as secrets in Kubernetes. These might vary from environmnet to environment. Create yamls for different environemnts. Make sure the pods write logs to a location which can then be fed to Elasticsearch(ELK).
 8. From the CI/CD pipeline - (git, Jenkins, SOnarqube, docker registry) build all the different docker images required for the deployment.
 9. Create all unit tests, integration tests, DB scripts, health checks for each deployment.
+![CI/CD Pipeline](images/CI.jpg?raw=true "Title")
 9. Take a dump of the old DB on filesystem and move it to required mount location on Kubernetes. (This step has lot of options - move manually assuming it is not very huge, or use 3rd party services like Amazon Database migration Service etc..)
 10. start the entire application and expose the required service using ingress service.
 11. Run the basic integration tests or DB test scripts and create a report. For UI some selenium scripts can also be integrated
@@ -44,6 +46,7 @@ case study
 21. If the environment is working as expected, keep this as environment for further tests.
 22. Now procure the prod environemt on AWS using terraform. Using the above automation, deploy every app related containers on prod and setup monitoring and logging similar to the dev environemnt and run all the automated tests that were run on test. (except load test or stress test).
 23. Coming to DB, now use AWS Database migration service for moving realtime data from datacenter to AWS. Now that we have same data between our datacenter DB and the one on Kubernetes, we will use Blue-green deployment.
+![Blue-Green Deployment](images/blue-green-deployment.jpg?raw=true "Title")
 24. We will redirect traffic to Kubernetes version. If any thing goes wrong, fall back to the app running on Datacenter. 
 25. If everything runs smooth, we will retire the Datacenter version of our application. 
 
